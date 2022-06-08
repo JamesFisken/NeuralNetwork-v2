@@ -24,11 +24,6 @@ class o_node:
         self.bias = 0
 
 
-truthtable = [0, 0, 1]
-
-
-NN_layout = [4, 3, 3]
-NN_length = len(NN_layout)
 
 NN=[]
 
@@ -75,6 +70,8 @@ def display_NN():
     print("")
 
 def sigmoid(x):
+    if x < 0:
+        return 1 - 1 / (1 + math.exp(x))
     return 1 / (1 + math.exp(-x))
 
 def dotproduct(values, weights, bias):
@@ -99,16 +96,43 @@ def foward_propagate(NN):
             NN[n+1][i].value = sigmoid(v)
     output = [NN[-1][x].value for x in range(len(NN[-1]))]
     fcost = cost(truthtable, output)
-    print("cost:", fcost)
     return fcost
 
-given_inputs = [1, 2, 3, 2.5]
 
+generations = 3000
+sample_size = 50
+NN_layout = [784, 20, 20, 15, 10]
+NN_length = len(NN_layout)
+
+given_inputs, label = MnistDataSet.get_image(1)
 init(given_inputs)
 adjust_modifiers(NN, 1)
-fcost = foward_propagate(NN)
-adjust_modifiers(NN, fcost)
+best_nn = NN.copy()
 
-foward_propagate(NN)
-display_NN()
+best_results = 10
+
+for i in range(generations):
+    results = []
+
+    adjust_modifiers(best_nn, best_results) #NN is set to the best with adjusted modifiers
+    numbers = [random.randint(0, 10000) for y in range(sample_size)]
+    for n, num in enumerate(numbers):
+        given_inputs, label = MnistDataSet.get_image(num)
+        truthtable = [0 for x in range(10)]
+        truthtable[label] = 1
+
+        #init(given_inputs)
+        for a, l in enumerate(NN[0]):
+            l.value = given_inputs[a]
+        fcost = foward_propagate(NN)
+        results.append(fcost)
+    F_results = (sum(results) / len(results))
+    print("final results", F_results)
+    if F_results < best_results:
+        print("new best: ", F_results)
+        best_results = F_results
+        best_nn = NN.copy()
+print(best_results)
+
+
 print("code took: ", time.time() - start_time, "seconds to run")
